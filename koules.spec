@@ -1,6 +1,6 @@
 %define name 		koules
 %define version		1.4
-%define release %mkrel 9
+%define release %mkrel 10
 
 Summary:	Space action game for X11
 Name:		%{name}
@@ -15,7 +15,7 @@ Source2:	%{name}-32.png
 Source3:	%{name}-48.png
 Patch0:		koules-debian.patch.bz2 
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}buildroot
-BuildRequires:  X11-devel tk
+BuildRequires:  X11-devel tk imake
 
 %description
 Koules is a fast action arcade-style game. This version is compiled for X11.
