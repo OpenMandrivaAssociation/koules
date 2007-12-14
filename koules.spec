@@ -1,6 +1,6 @@
 %define name 		koules
 %define version		1.4
-%define release %mkrel 10
+%define release %mkrel 11
 
 Summary:	Space action game for X11
 Name:		%{name}
@@ -8,7 +8,7 @@ Version:	%{version}
 Release:	%{release}
 Group: 		Games/Arcade
 URL:		http://www.paru.cas.cz/~hubicka/koules/English/koules.html
-License:	GPL
+License:	GPLv2+
 Source0:	%{name}-%{version}.tar.bz2
 Source1:	%{name}-16.png
 Source2:	%{name}-32.png
@@ -43,20 +43,6 @@ rm -rf $RPM_BUILD_ROOT
 install startkoules %{buildroot}%{_gamesbindir}/
 install koules.tcl %{buildroot}%{_libdir}/%{_gamesdir}/%{name}
 
-mkdir -p %{buildroot}/%{_menudir}
-cat << EOF > %{buildroot}/%{_menudir}/%{name}
-?package(koules): \
-   needs=X11 \
-   section="More Applications/Games/Arcade" \
-   title="XKoules" \
-   icon="%{name}.png" \
-   longtitle="Space action game for X" \
-   description="XKoules is a somewhat abstract space action game for X11 with sound. \
-                Supports multiplayer deathmatch and cooperative play." \
-   command="%{_gamesbindir}/xkoules"\
-   xdg="true"
-EOF
-
 mkdir -p $RPM_BUILD_ROOT%{_datadir}/applications
 cat > $RPM_BUILD_ROOT%{_datadir}/applications/mandriva-%{name}.desktop << EOF
 [Desktop Entry]
@@ -66,7 +52,7 @@ Exec=%{_bindir}/%{name}
 Icon=%{name}
 Terminal=false
 Type=Application
-Categories=X-MandrivaLinux-MoreApplications-Games-Arcade;Game;ArcadeGame;
+Categories=Game;ArcadeGame;
 EOF
 
 # mdk icon
@@ -86,7 +72,6 @@ rm -fr %{buildroot};
 %files
 %defattr(-,root,root)
 %doc ChangeLog ANNOUNCE BUGS Card Koules.FAQ Problems README TODO
-%{_menudir}/*
 %{_datadir}/applications/mandriva-%{name}.desktop
 %{_gamesbindir}/*
 %{_mandir}/*/*
