@@ -14,7 +14,6 @@ Source1:	%{name}-16.png
 Source2:	%{name}-32.png
 Source3:	%{name}-48.png
 Patch0:		koules-debian.patch.bz2 
-BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}buildroot
 BuildRequires:  X11-devel tk imake
 
 %description
