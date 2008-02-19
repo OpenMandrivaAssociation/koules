@@ -1,13 +1,13 @@
 %define name 		koules
 %define version		1.4
-%define release %mkrel 13
+%define release %mkrel 14
 
 Summary:	Space action game for X11
 Name:		%{name}
 Version:	%{version}
 Release:	%{release}
 Group: 		Games/Arcade
-URL:		http://www.paru.cas.cz/~hubicka/koules/English/koules.html
+URL:		http://www.ucw.cz/~hubicka/koules/English/distribution.html
 License:	GPLv2+
 Source0:	%{name}-%{version}.tar.bz2
 Source1:	%{name}-16.png
