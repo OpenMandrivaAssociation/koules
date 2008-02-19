@@ -1,6 +1,6 @@
 %define name 		koules
 %define version		1.4
-%define release %mkrel 12
+%define release %mkrel 13
 
 Summary:	Space action game for X11
 Name:		%{name}
@@ -14,6 +14,8 @@ Source1:	%{name}-16.png
 Source2:	%{name}-32.png
 Source3:	%{name}-48.png
 Patch0:		debian-koules-1.4-17.patch
+# this font is hardcoded in the code
+Requires:	x11-font-schumacher-misc
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}buildroot
 BuildRequires:  tk imake
 BuildRequires:	libxext-devel
@@ -44,6 +46,12 @@ if [ ! -s xkoules.man ]; then ln -sf xkoules.6 xkoules.man; fi
 %install
 rm -rf $RPM_BUILD_ROOT
 %makeinstall KOULESDIR=%{buildroot}%{_gamesbindir} SOUNDDIR=%{buildroot}%{_libdir}/%{_gamesdir}/%{name} MANDIR=%{buildroot}/%{_mandir}/man6 
+mv %{buildroot}%{_gamesbindir}/xkoules %{buildroot}%{_gamesbindir}/xkoules.bin
+cat <<EOF >%{buildroot}%{_gamesbindir}/xkoules
+#!/bin/sh
+exec soundwrapper %{_gamesbindir}/xkoules.bin
+EOF
+chmod a+x %{buildroot}%{_gamesbindir}/xkoules
 
 install startkoules %{buildroot}%{_gamesbindir}/
 install koules.tcl %{buildroot}%{_libdir}/%{_gamesdir}/%{name}
