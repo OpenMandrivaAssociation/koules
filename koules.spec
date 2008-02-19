@@ -1,6 +1,6 @@
 %define name 		koules
 %define version		1.4
-%define release %mkrel 15
+%define release %mkrel 16
 
 Summary:	Space action game for X11
 Name:		%{name}
@@ -25,9 +25,10 @@ BuildRequires:	libxdmcp-devel
 BuildRequires:	libxcb-devel
 
 %description
-Koules is a fast action arcade-style game.  It has cool 256 color graphics, a
-multiplayer mode for up to 5 players, full sound and, of course, network
-support.
+Koules is a simple fast-action arcade-style no-brainer balls game you have
+never seen alike before! It has simple, classic, old-school fantastic 256
+color graphics, a multiplayer mode for up to 5 players on the same keyboard,
+or via network, full sound, and, of course, lots of wild fun!
 
 %prep
 
