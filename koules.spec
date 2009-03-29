@@ -1,6 +1,6 @@
 %define name 		koules
 %define version		1.4
-%define release %mkrel 18
+%define release %mkrel 19
 
 Summary:	Space action game for X11
 Name:		%{name}
@@ -61,7 +61,7 @@ cat > $RPM_BUILD_ROOT%{_datadir}/applications/mandriva-%{name}.desktop << EOF
 [Desktop Entry]
 Name=XKoules
 Comment=%{summary}
-Exec=%{_bindir}/%{name}
+Exec=%{_gamesbindir}/xkoules
 Icon=%{name}
 Terminal=false
 Type=Application
