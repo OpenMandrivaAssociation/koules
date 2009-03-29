@@ -22,7 +22,7 @@ BuildRequires:	libxext-devel
 BuildRequires:	libx11-devel
 BuildRequires:	libxau-devel
 BuildRequires:	libxdmcp-devel
-BuildRequires:	libxcb-devel
+BuildRequires:  pkgconfig(xcb)	
 
 %description
 Koules is a simple fast-action arcade-style no-brainer balls game you have
