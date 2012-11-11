@@ -1,0 +1,677 @@
+--- koules-1.4.orig/Makefile.svgalib
++++ koules-1.4/Makefile.svgalib
+@@ -116,6 +116,6 @@
+ 
+ .depend:
+ 	echo '# Program dependencies' >.depend
+-	gcc -I svgalib $(DEFINES) -MM $(patsubst %.o,%.c,$(PROGS_O)) >>.depend
++	$(CC) -I svgalib $(DEFINES) -MM $(patsubst %.o,%.c,$(PROGS_O)) >>.depend
+ 
+ include .depend
+--- koules-1.4.orig/Imakefile
++++ koules-1.4/Imakefile
+@@ -73,7 +73,12 @@
+ 
+ LOCAL_LIBRARIES = util/libutils.a xlib/libxlib.a $(NASLIB) $(XLIB) $(EXTRALIB)  -lm 
+ DEPLIBS= util/libutils.a xlib/libxlib.a $(DEPXLIB)
+- 
++
++util/libutils.a::
++	cd util && make libutils.a
++
++xlib/libxlib.a::
++	cd xlib && make libxlib.a
+ 
+ MakeSubdirs($(SUBDIRS))
+ DependSubdirs($(SUBDIRS))
+--- koules-1.4.orig/xlib/init.c
++++ koules-1.4/xlib/init.c
+@@ -769,6 +770,32 @@
+ #endif
+ 	  break;
+ 	default:
++#ifdef NETSUPPORT
++#define USAGE_NETSUPPORT " -S run koules as network server\n \
++-C<host> run koules as network client\n \
++-P<port> select port. Default is:%i\n \
++-W run server in width mode-support for 320x200 svgalib and OS/2 clients\n \
++-L<level> select level for server\n \
++-D<number> select dificulty for server:\n \
++    0: nightmare\n \
++    1: hard\n \
++    2: medium(default and recomended)\n \
++    3: easy\n \
++    4: very easy\n \
++-K run server in deathmatch mode\n "
++#else
++#define USAGE_NETSUPPORT ""
++#endif
++#ifdef SOUND
++#define USAGE_SOUND " -d Disable sound support\n"
++#else
++#define USAGE_SOUND ""
++#endif
++#ifdef MITSHM
++#define USAGE_MITSHM " -M DISABLE shared memory support\n"
++#else
++#define USAGE_MITSHM ""
++#endif
+ 	  printf ("USAGE:"
+ 		  " -h for help\n"
+ 		  " -b for blackandwhite displays\n"
+@@ -778,27 +805,10 @@
+ 		  " -p use private colormap\n"
+ 		  " -y Synchronize with X(for debugging)\n"
+ 		  " -f nofade(for debugging)\n"
+-#ifdef SOUND
+-		  " -d Disable sound support\n"
+-#endif
++		  USAGE_SOUND
+ 		  " -x Disable X11 pointer\n"
+-#ifdef MITSHM
+-		  " -M DISABLE shared memory support\n"
+-#endif
+-#ifdef NETSUPPORT
+-		  " -S run koules as network server\n"
+-		  " -C<host> run koules as network client\n"
+-		  " -P<port> select port. Default is:%i\n"
+-		  " -W run server in width mode-support for 320x200 svgalib and OS/2 clients\n"
+-		  " -L<level> select level for server\n"
+-		  " -D<number> select dificulty for server:\n"
+-		  "     0: nightmare\n"
+-		  "     1: hard\n"
+-		  "     2: medium(default and recomended)\n"
+-		  "     3: easy\n"
+-		  "     4: very easy\n"
+-		  " -K run server in deathmatch mode\n", DEFAULTINITPORT
+-#endif
++		  USAGE_MITSHM
++		  USAGE_NETSUPPORT, DEFAULTINITPORT
+ 	    );
+ 	  exit (2);
+ 	}
+--- koules-1.4.orig/Iconfig
++++ koules-1.4/Iconfig
+@@ -18,7 +18,7 @@
+    use my emulation
+    If you are unsure try to leave it commented out. My emulation
+    works on most unixes*/
+-/*#define HAVEUSLEEP*/
++#define HAVEUSLEEP
+ /* for network audio server(supported by most unixes)*/
+ /* It does not sound as well as built in driver ... koules uses too 
+    much sounds*/
+@@ -29,14 +29,14 @@
+ /* linux joystick support
+    Now compiles w/o joystick toolkit. For using joystick support is
+    joystick toolikit required...of course */
+-/*#define JOYSTICK*/
++#define JOYSTICK
+ /*for fast 386 based assembler routines
+   recomended for linux*/
+-/*#define I386ASSEMBLY*/
++#define I386ASSEMBLY
+ /* directories*/
+-KOULESDIR		=/usr/bin/X11
+-SOUNDDIR		=/usr/local/lib/koules
+-MANDIR			=/usr/local/man/man6
++KOULESDIR		=/usr/games
++SOUNDDIR		=/usr/games/lib/koules
++MANDIR			=/usr/man/man6
+ 
+ /*You need some extra libraryes for BSD sockets compatibility?*/
+ /* TOP_INCLUDES =                       /* Sun users with GCC need this */
+@@ -61,7 +61,7 @@
+ #endif
+ 
+ 
+-#if defined(HPArchitecture)
++#if defined(HPArchitecture) && !defined(LinuxArchitecture)
+     SYSDEFS = +O3 -Ae 
+ #if !defined(NAS_SOUND)&&!defined(RSOUND)
+ #define SOUND
+--- koules-1.4.orig/rcfiles.c
++++ koules-1.4/rcfiles.c
+@@ -66,7 +67,7 @@
+   if ((controls = fopen (fullname, "w")) == NULL)
+     {
+       printf ("could not open save file:%s\n"
+-	      "saving of controls skippen\n", fullname);
++	      "saving of controls skipped\n", fullname);
+       perror ("error");
+       return;
+     }
+@@ -96,7 +97,7 @@
+   if ((levels = fopen (fullname, "w")) == NULL)
+     {
+       printf ("could not open save file:%s\n"
+-	      "saving of controls skippen\n", fullname);
++	      "saving of controls skipped\n", fullname);
+       perror ("error");
+       return;
+     }
+--- koules-1.4.orig/text.h
++++ koules-1.4/text.h
+@@ -270,7 +270,7 @@
+ {
+   "The DARK APPLEPOLISHER",
+   "has heard about you",
+-  "Your are famous",
++  "You are famous",
+   "This has one disadvantage",
+   "B_BALLS are going to",
+   "kick you out",
+@@ -290,7 +290,7 @@
+   "...",
+   "do not",
+   "turn the power off",
+-  "your are near",
++  "you are near",
+   "your goal",
+   "NOW you can finish the game"};
+ static int      BBBALLSIZE = (sizeof (bbballtext) / sizeof (char *));
+--- koules-1.4.orig/koules.sndsrv.linux.c
++++ koules-1.4/koules.sndsrv.linux.c
+@@ -65,10 +65,9 @@
+   for (i = 0; i < NUM_SOUNDS; i++)
+     {
+       s[0] = 0;
+-      strcat (s, argv[1]);
+-      if (s[(int) strlen (s) - 1] == '/')
++      if (argv[1][(int) strlen (argv[1]) - 1] == '/')
+ 	FILENAME[i]++;
+-      strcat (s, FILENAME[i]);
++      snprintf(s, sizeof(s), "%s%s", argv[1], FILENAME[i]);
+       FILENAME[i] = malloc ((int) strlen (s) + 1);
+       strcpy (FILENAME[i], s);
+       sound_buffer[i] = NULL;
+Index: koules-1.4/rcfiles.c
+===================================================================
+--- koules-1.4.orig/rcfiles.c	2006-11-03 11:12:56.000000000 +0100
++++ koules-1.4/rcfiles.c	2006-11-03 11:12:58.000000000 +0100
+@@ -20,6 +20,7 @@
+ /* Changes for joystick "accelerate by deflection"         *
+  *  (c) 1997 by Ludvik Tesar (Ludv\'{\i}k Tesa\v{r})       *
+  ************************LT*********************************/
++#include <errno.h>
+ #include "koules.h"
+ #ifdef XSUPPORT
+ static CONST char *name = ".xkoules-controls";
+Index: koules-1.4/xlib/interface.c
+===================================================================
+--- koules-1.4.orig/xlib/interface.c	1998-03-05 18:19:44.000000000 +0100
++++ koules-1.4/xlib/interface.c	2006-11-03 11:12:58.000000000 +0100
+@@ -14,6 +14,7 @@
+ *----------------------------------------------------------*
+ *  interface.c interface xlib graphics functions           *
+ ***********************************************************/
++#include <stdint.h>
+ #include <X11/Xlib.h>
+ #include <X11/keysym.h>
+ #include <X11/keysymdef.h>
+Index: koules-1.4/xlib/init.c
+===================================================================
+--- koules-1.4.orig/xlib/init.c	2006-11-03 11:12:54.000000000 +0100
++++ koules-1.4/xlib/init.c	2006-11-03 11:12:58.000000000 +0100
+@@ -30,6 +30,7 @@
+ #include "../framebuffer.h"
+ 
+ #include <sys/time.h>
++#include <time.h>
+ #include <unistd.h>
+ #include "../mygetopt.h"
+ #include <sys/signal.h>
+Index: koules-1.4/xlib/text.c
+===================================================================
+--- koules-1.4.orig/xlib/text.c	2006-11-03 11:13:03.000000000 +0100
++++ koules-1.4/xlib/text.c	2006-11-03 11:13:17.000000000 +0100
+@@ -4,6 +4,7 @@
+ 
+ #ifdef MITSHM
+ #include <stdlib.h>
++#include <string.h>
+ #include "inlstring.h"		/* include inline string operations */
+ #include "interface.h"
+ 
+--- koules-1.4.orig/xlib/shmbitmap.c
++++ koules-1.4/xlib/shmbitmap.c
+@@ -248,7 +248,6 @@
+ 	    "idivl %3\n\t"
+ :	    "=a" (result)	/* out */
+ :	    "a" (m1), "d" (m2), "g" (d)		/* in */
+-:	    "ax", "dx"		/* mod */
+     );
+   return result;
+ }
+--- koules-1.4.orig/xlib/inlstring.h
++++ koules-1.4/xlib/inlstring.h
+@@ -238,13 +238,12 @@
+ static INLINE void *
+ __memcpy_aligndest (void *dest, const void *src, int n)
+ {
+-  __asm__         __volatile__ ("
+-				cmpl $3, %%ecx
+-				ja 1f
+-				call * __memcpy_jumptable (, %%ecx, 4)
+-				jmp 2f
+-				1:call __memcpyasm_regargs
+-				"
++  __asm__         __volatile__ (
++				"cmpl $3, %%ecx\n\t"
++				"ja 1f\n\t"
++				"call * __memcpy_jumptable (, %%ecx, 4)\n\t"
++				"jmp 2f\n\t"
++				"1:call __memcpyasm_regargs\n\t"
+ 				:
+ 				:"b"            (dest), "d" (src), "c" (n)
+ 				:"ax", "0", "1", "2");
+@@ -255,14 +254,13 @@
+ static INLINE void *
+ __memcpy_destaligned (void *dest, const void *src, int n)
+ {
+-  __asm__         __volatile__ ("
+-				cmpl $32, %%ecx
+-				ja 1f
+-				call * __memcpy_jumptable (, %%ecx, 4)
+-				jmp 2f
+-				1:call __memcpyasm_regargs_aligned
+-				2:
+-				"
++  __asm__         __volatile__ (
++				"cmpl $32, %%ecx\n\t"
++				"ja 1f\n\t"
++				"call * __memcpy_jumptable (, %%ecx, 4)\n\t"
++				"jmp 2f\n\t"
++				"1:call __memcpyasm_regargs_aligned\n\t"
++				"2:\n\t"
+ 				:
+ 				:"b"            (dest), "d" (src), "c" (n)
+ 				:"ax", "0", "1", "2");
+@@ -273,14 +271,13 @@
+ static INLINE void *
+ __memcpy_balanced (void *dest, const void *src, int n)
+ {
+-  __asm__         __volatile__ ("
+-				cmpl $19, %%ecx
+-				ja 1f
+-				call * __memcpy_jumptable (, %%ecx, 4)
+-				jmp 2f
+-				1:call __memcpyasm_regargs
+-				2:
+-				"
++  __asm__         __volatile__ (
++				"cmpl $19, %%ecx\n\t"
++				"ja 1f\n\t"
++				"call * __memcpy_jumptable (, %%ecx, 4)\n\t"
++				"jmp 2f\n\t"
++				"1:call __memcpyasm_regargs\n\t"
++				"2:\n\t"
+ 				:
+ 	     :"b"            ((long) dest), "d" ((long) src), "c" ((long) n)
+ 				:"ax", "bx", "cx", "dx");
+--- koules-1.4.orig/font.c
++++ koules-1.4/font.c
+@@ -58,7 +58,6 @@
+ 	    "idivl %3\n\t"
+ :	    "=a" (result)	/* out */
+ :	    "a" (m1), "d" (m2), "g" (d)		/* in */
+-:	    "ax", "dx"		/* mod */
+     );
+   return result;
+ }
+--- koules-1.4.orig/xlib/interface.c
++++ koules-1.4/xlib/interface.c
+@@ -154,7 +155,7 @@
+ 	  {
+ 	    register unsigned char *data = (unsigned char *) source.vbuff,
+ 	                   *end = (unsigned char *) source.vbuff + MAPWIDTH * (MAPHEIGHT + 20);
+-	    register unsigned long *out = (unsigned long *) source.ximage->data;
++	    register uint32_t *out = (uint32_t *) source.ximage->data;
+ 	    while (data < end)
+ 	      {
+ 		*out = rpixels[*data];
+--- koules-1.4.orig/koules.sndsrv.linux.c
++++ koules-1.4/koules.sndsrv.linux.c
+@@ -181,7 +180,7 @@
+ void
+ do_everything (int dsp, int is_pcsp)
+ {
+-  char            k;
++  signed char     k;
+   int             i, j;
+   int             terminate = -1;	/* Which Sound to Terminate                              */
+   int             playing[16];	/* Sound numbers that we are playing                     */
+--- koules-1.4.orig/rcfiles.c
++++ koules-1.4/rcfiles.c
+@@ -126,9 +127,11 @@
+ #endif
+   if ((controls = fopen (fullname, "r")) == NULL)
+     {
+-      printf ("could not open save file:%s\n"
+-	      "using default values\n", fullname);
+-      perror ("error");
++      if (errno != ENOENT) {
++        perror ("error");
++        printf ("could not open save file:%s\n"
++	        "using default values\n", fullname);
++      }
+       goto skip;
+     }
+   fread (keys, 1, sizeof (keys), controls);	/*save user defined keys */
+@@ -157,9 +160,11 @@
+ #endif
+   if ((levels = fopen (fullname, "r")) == NULL)
+     {
+-      printf ("could not open save file:%s\n"
+-	      "using default values\n", fullname);
+-      perror ("error");
++      if (errno != ENOENT) {
++        printf ("could not open save file:%s\n"
++   	        "using default values\n", fullname);
++        perror ("error");
++      }
+       return;
+     }
+ 
+Index: koules-1.4/xlib/init.c
+===================================================================
+--- koules-1.4.orig/xlib/init.c	2006-11-03 11:43:49.000000000 +0100
++++ koules-1.4/xlib/init.c	2006-11-03 11:56:04.000000000 +0100
+@@ -91,6 +91,8 @@
+ 
+ #ifdef MITSHM
+ extern int      XShmQueryExtension (Display * dpy);
++extern Bool     XShmQueryVersion (Display* dpy, int * major, int * minor,
++                                  Bool * sharedpixmaps);
+ static int      haderror;
+ static int      (*origerrorhandler) (Display *, XErrorEvent *);
+ static int      bpp;
+@@ -107,6 +109,15 @@
+   return (0);
+ }
+ 
++static int
++badmatcherrorhandler (Display * d, XErrorEvent * e)
++{
++  haderror++;
++  if (e->error_code != BadMatch)
++    (*origerrorhandler) (d, e);
++  return (0);
++}
++
+ #define Width MAPWIDTH
+ #define Height (MAPHEIGHT+20)
+ XShmSegmentInfo shminfo;
+@@ -186,16 +197,27 @@
+   fflush (stdout);
+   testpixmap = XCreatePixmap (dp, wi, MAPWIDTH, MAPHEIGHT + 20, DefaultDepth (dp, screen));
+   XSync (dp, 0);
++  haderror = False;
++  origerrorhandler = XSetErrorHandler (badmatcherrorhandler);
+   for (i = 0; i < 10 && wait > 0; i++)
+     {
+-      XPutImage (dp, testpixmap, gc, pixmap->ximage, 0, 0, 0, 0, MAPWIDTH, MAPHEIGHT + 20);
++      if (!XPutImage (dp, testpixmap, gc, pixmap->ximage, 0, 0, 0, 0,
++                      MAPWIDTH, MAPHEIGHT + 20))
++        break;
+       XSync (dp, 0);
+       gettimeofday (&VnewClk, NULL);
+       if (VnewClk.tv_usec < VendSleep)
+ 	VendSleep -= 1000000;
+       wait = (VfTime - VnewClk.tv_usec + VendSleep);
+     }
++  XSync (dp, False);
++  XSetErrorHandler (origerrorhandler);
+   XFreePixmap (dp, testpixmap);
++  if (haderror)
++    {
++      printf (" XPutImage failed (remote server?)\n");
++      return 0;
++    }
+   if (i == 10)
+     {
+       printf ("OK\n");
+@@ -258,6 +280,7 @@
+   pixmap->ximage->data = (char *) shared_mem;
+ 
+   /* Now try to attach it to the X Server */
++  XSync (dp, False);
+   haderror = False;
+   origerrorhandler = XSetErrorHandler (shmerrorhandler);
+   if (!XShmAttach (dp, &shminfo))
+@@ -416,22 +439,25 @@
+ #ifdef MITSHM
+   /* Make sure all is destroyed if killed off */
+ 
+-  /* Make sure we can do PsuedoColor colormap stuff */
++  /* Make sure we can do PseudoColor colormap stuff */
+   if (!shm)
+     {
+       printf ("Shm support disabled\n");
+     }
+   else
+-    /* Check to see if the extensions are supported */
+-  if (!XShmQueryExtension (dp))
+     {
+-      fprintf (stderr, "X server doesn't support MITSHM extension.\n");
+-      shm = 0;
++      /* Check to see if the extensions are supported */
++      int major, minor;
++      Bool pixmaps;
++      if (XShmQueryVersion (dp, &major, &minor, &pixmaps) != 0
++           && (major > 1 || (major == 1 && minor >= 1)))
++          printf ("Shm mode seems to be possible\n");
++      else
++        {
++          fprintf (stderr, "X server doesn't support MITSHM extension.\n");
++          shm = 0;
++        }
+     }
+-  if (shm)
+-    printf ("Shm mode seems to be possible\n");
+-
+-
+ #endif
+   wi = physicalscreen.pixmap = XCreateSimpleWindow (dp, RootWindow (dp, screen), 50, 50, MAPWIDTH, MAPHEIGHT + 20,
+ 						    0, 0, 0);
+Index: koules-1.4/xlib/init.c
+===================================================================
+--- koules-1.4.orig/xlib/init.c	2007-09-03 20:29:10.000000000 +0200
++++ koules-1.4/xlib/init.c	2007-09-03 20:29:29.000000000 +0200
+@@ -386,6 +386,8 @@
+       printf ("could not open display\n");
+       exit (0);
+     }
++  if (Sync)
++    XSynchronize (dp, 1);
+   XSetCloseDownMode (dp, DestroyAll);
+   screen = DefaultScreen (dp);
+   fadeenable = 1;
+@@ -578,8 +580,6 @@
+     }
+ #endif
+ 
+-  if (Sync)
+-    XSynchronize (dp, 1);
+ #if defined(NAS_SOUND)||defined(RSOUND)
+   printf ("Initializing sound server...\n");
+   if (sndinit)
+@@ -666,7 +666,7 @@
+ 	  "\n\n\n\n"
+ 	  "                     Copyright(c) Jan Hubicka 1995, 1996\n\n\n");
+   useprivate = 0;
+-  while ((c = mygetopt (argc, argv, "KWD:P:L:C:SxslEMmpdhfb")) != -1)
++  while ((c = mygetopt (argc, argv, "KWD:P:L:C:SxyslEMmpdhfb")) != -1)
+     {
+       switch (c)
+ 	{
+
+Index: koules-1.4/xlib/init.c
+===================================================================
+--- koules-1.4.orig/xlib/init.c	2007-09-03 20:46:52.000000000 +0200
++++ koules-1.4/xlib/init.c	2007-09-03 21:38:49.000000000 +0200
+@@ -95,7 +95,6 @@
+                                   Bool * sharedpixmaps);
+ static int      haderror;
+ static int      (*origerrorhandler) (Display *, XErrorEvent *);
+-static int      bpp;
+ 
+ 
+ static int
+@@ -179,14 +178,14 @@
+   VfTime = 1000000 / 25 * 12;
+   pixmap->ximage = XCreateImage (dp, DefaultVisual (dp, screen),
+ 				 depth, ZPixmap, 0,
+-				 NULL, Width, Height, bpp * 8, 0);
++				 NULL, Width, Height, depth, 0);
+   if (!pixmap->ximage)
+     {
+       fprintf (stderr, "Can't get image\n");
+       return 0;
+     }
+   /*Calculate size of shared memory */
+-  memsize = ((Width + 1) * (Height + 1) * bpp);
++  memsize = ((Width + 1) * (Height + 1) * depth / 8);
+   if ((data = malloc (memsize)) == NULL)
+     {
+       printf ("Can't malloc memory for image\n");
+@@ -340,7 +339,6 @@
+   char           *title1 = "Koules";
+ 
+   Font            f;
+-  XVisualInfo     vinfo_return;
+   XGCValues       values;
+ #ifndef NAS_SOUND
+ #ifndef RSOUND
+@@ -390,54 +388,46 @@
+     XSynchronize (dp, 1);
+   XSetCloseDownMode (dp, DestroyAll);
+   screen = DefaultScreen (dp);
+-  fadeenable = 1;
+-  if (XMatchVisualInfo (dp, DefaultScreen (dp),
+-			8, PseudoColor, &vinfo_return) == False)
+-    {
+-      fadeenable = 0;
+-      printf ("X: Screen doesn't support PseudoColor!\n");
+-      if (XMatchVisualInfo (dp, DefaultScreen (dp),
+-			    32, TrueColor, &vinfo_return) == True)
+-	{
+-	  useprivate = 0;
+-	  bpp = 4;
+-	}
+-      else if (XMatchVisualInfo (dp, DefaultScreen (dp),
+-				 24, TrueColor, &vinfo_return) == True)
+-	{
+-	  useprivate = 0;
+-	  bpp = 4;
+-	}
+-      else if (XMatchVisualInfo (dp, DefaultScreen (dp),
+-				 16, TrueColor, &vinfo_return) == True)
+-	{
+-	  useprivate = 0;
+-	  bpp = 2;
+-	}
+-      else if (XMatchVisualInfo (dp, DefaultScreen (dp),
+-				 15, TrueColor, &vinfo_return) == True)
+-	{
+-	  useprivate = 0;
+-	  bpp = 2;
+-	}
+-      else if (XMatchVisualInfo (dp, DefaultScreen (dp),
+-				 8, GrayScale, &vinfo_return) == True)
+-	{
+-	  useprivate = 0;
+-	  monochrome = 1;
+-	  bpp = 2;
+-	}
+-      else
+-	{
+-	  printf ("Unsupported visual! Using slow and reliable mode\n");
++  {
++    XVisualInfo template;
++    XVisualInfo * vinfo;
++    int nitems_return;
++    template.visualid = XVisualIDFromVisual (DefaultVisual (dp, DefaultScreen (dp)));
++    vinfo = XGetVisualInfo (dp, VisualIDMask, &template, &nitems_return);
++    if (nitems_return == 0)
++      {
++        printf ("X server does not know about the default visual...");
++        exit (0);
++      }
++
++    if (vinfo->class == PseudoColor && vinfo->depth == 8)
++      {
++        fadeenable = 1;
++      }
++    else
++      {
++        fadeenable = 0;
++        printf ("X: Screen doesn't support PseudoColor!\n");
++        if (vinfo->class == TrueColor)
++          {
++            useprivate = 0;
++          }
++        else if (vinfo->class == GrayScale)
++          {
++            useprivate = 0;
++            monochrome = 1;
++          }
++        else
++          {
++            printf ("Unsupported visual! Using slow and reliable mode\n");
+ #ifdef MITSHM
+-	  shm = 0;
++            shm = 0;
+ #endif
+-	}
+-    }
+-  else
+-    bpp = 1;
+-  depth = vinfo_return.depth;
++          }
++      }
++    depth = vinfo->depth;
++    XFree(vinfo);
++  }
+ #ifdef MITSHM
+   /* Make sure all is destroyed if killed off */
+
+--- koules-1.4.orig/koules.tcl
++++ koules-1.4/koules.tcl
+@@ -3,9 +3,9 @@
+ # This is simple user (anti)friendly dialog for starting koules
+ # Only reason why I did it is that I wanted to try tcl/tk
+ #files - configure here if paths are differ
+-set xkoules "/usr/bin/X11/xkoules"
+-set koulessvga "/usr/local/bin/koules.svga"
+-set koulessound "/usr/local/lib/koules/creator1.raw"
++set xkoules "/usr/games/xkoules"
++set koulessvga "/usr/games/koules.svga"
++set koulessound "/usr/lib/games/koules/creator1.raw"
+ set config "~/.xkoules.opt"
+ set revision 1.1
+ # Set default
+--- koules-1.4.orig/startkoules
++++ koules-1.4/startkoules
+@@ -0,0 +1,9 @@
++#!/bin/sh
++if [ ! -f /usr/bin/wish ]; then
++	echo "Sorry, this script requires the tcl8.3 and tk8.3 packages to be installed."
++	echo "They are not a dependency of the koules package in case you don't want to use"
++	echo "this script. Please install those packages and execute this script again."
++	exit 1
++fi
++
++exec /usr/bin/wish /usr/lib/games/koules/koules.tcl
+--- koules-1.4.orig/xlib/shmbitmap.c	2007-10-26 21:16:50.000000000 -0400
++++ koules-1.4/xlib/shmbitmap.c	2007-10-26 21:18:21.000000000 -0400
+@@ -187,6 +187,9 @@
+ void
+ ShmPutBitmap (int x, int y, int w, int h, void *_dp)
+ {
++  if (x < 0 || y < 0)
++    return;
++
+ /* no clipping */
+   uchar          *dp = _dp;
+   uchar          *vp, *vpline;
