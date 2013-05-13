@@ -1,6 +1,6 @@
 %define name 		koules
 %define version		1.4
-%define release %mkrel 19
+%define release  20
 
 Summary:	Space action game for X11
 Name:		%{name}
@@ -16,7 +16,6 @@ Source3:	%{name}-48.png
 Patch0:		debian-koules-1.4-17.patch
 # this font is hardcoded in the code
 Requires:	x11-font-schumacher-misc
-BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}buildroot
 BuildRequires:  tk imake
 BuildRequires:	pkgconfig(xext)
 BuildRequires:	pkgconfig(x11)
