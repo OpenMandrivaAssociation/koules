@@ -18,10 +18,10 @@ Patch0:		debian-koules-1.4-17.patch
 Requires:	x11-font-schumacher-misc
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}buildroot
 BuildRequires:  tk imake
-BuildRequires:	libxext-devel
-BuildRequires:	libx11-devel
-BuildRequires:	libxau-devel
-BuildRequires:	libxdmcp-devel
+BuildRequires:	pkgconfig(xext)
+BuildRequires:	pkgconfig(x11)
+BuildRequires:	pkgconfig(xau)
+BuildRequires:	pkgconfig(xdmcp)
 BuildRequires:  pkgconfig(xcb)	
 
 %description
