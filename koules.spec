@@ -1,6 +1,6 @@
 %define name 		koules
 %define version		1.4
-%define release  20
+%define release  21
 
 Summary:	Space action game for X11
 Name:		%{name}
