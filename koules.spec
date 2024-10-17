@@ -7,7 +7,7 @@ Name:		%{name}
 Version:	%{version}
 Release:	%{release}
 Group: 		Games/Arcade
-URL:		http://www.ucw.cz/~hubicka/koules/English/distribution.html
+URL:		https://www.ucw.cz/~hubicka/koules/English/distribution.html
 License:	GPLv2+
 Source0:	%{name}-%{version}.tar.bz2
 Source1:	%{name}-16.png
